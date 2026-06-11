@@ -66,35 +66,15 @@ export default function MyChart() {
   const getResponsiveValues = () => {
     const width = windowSize.width;
 
-    if (width < 640) {
+    if (width < 1024) {
       return {
         containerWidth: "100%",
-        containerHeight: 240,
-        containerPadding: "12px",
-        containerRadius: "10px",
-        h1FontSize: "1.1rem",
-        h3FontSize: "0.8rem",
-        marginBottom: "8px",
-      };
-    } else if (width < 768) {
-      return {
-        containerWidth: "100%",
-        containerHeight: 320,
-        containerPadding: "16px",
-        containerRadius: "11px",
-        h1FontSize: "1.3rem",
-        h3FontSize: "0.95rem",
-        marginBottom: "12px",
-      };
-    } else if (width < 1024) {
-      return {
-        containerWidth: "100%",
-        containerHeight: 360,
-        containerPadding: "18px",
-        containerRadius: "11px",
-        h1FontSize: "1.4rem",
-        h3FontSize: "1.05rem",
-        marginBottom: "14px",
+        containerHeight: 380,
+        containerPadding: "20px",
+        containerRadius: "12px",
+        h1FontSize: "1.5rem",
+        h3FontSize: "1.1rem",
+        marginBottom: "15px",
       };
     } else {
       return {
