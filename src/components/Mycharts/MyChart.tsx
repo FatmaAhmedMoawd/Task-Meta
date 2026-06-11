@@ -69,28 +69,28 @@ export default function MyChart() {
     if (width < 640) {
       return {
         containerWidth: "100%",
-        containerHeight: 380,
-        containerPadding: "16px",
+        containerHeight: 240,
+        containerPadding: "12px",
         containerRadius: "10px",
-        h1FontSize: "1.25rem",
-        h3FontSize: "0.95rem",
-        marginBottom: "12px",
+        h1FontSize: "1.1rem",
+        h3FontSize: "0.8rem",
+        marginBottom: "8px",
       };
     } else if (width < 768) {
       return {
         containerWidth: "100%",
-        containerHeight: 400,
-        containerPadding: "18px",
+        containerHeight: 320,
+        containerPadding: "16px",
         containerRadius: "11px",
-        h1FontSize: "1.35rem",
-        h3FontSize: "1rem",
-        marginBottom: "13px",
+        h1FontSize: "1.3rem",
+        h3FontSize: "0.95rem",
+        marginBottom: "12px",
       };
     } else if (width < 1024) {
       return {
         containerWidth: "100%",
-        containerHeight: 420,
-        containerPadding: "19px",
+        containerHeight: 360,
+        containerPadding: "18px",
         containerRadius: "11px",
         h1FontSize: "1.4rem",
         h3FontSize: "1.05rem",
@@ -99,7 +99,7 @@ export default function MyChart() {
     } else {
       return {
         containerWidth: "calc(50% - 12px)",
-        containerHeight: 400,
+        containerHeight: 380,
         containerPadding: "20px",
         containerRadius: "12px",
         h1FontSize: "1.5rem",

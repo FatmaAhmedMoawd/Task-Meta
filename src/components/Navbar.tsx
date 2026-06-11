@@ -9,139 +9,51 @@ interface NavbarProps {
 
 export default function Navbar({ brandText, onMenuToggle }: NavbarProps) {
   return (
-    <header
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 16,
-        marginBottom: 24,
-        flexWrap: "wrap",
-        width: "100%",
-      }}
-    >
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between mb-5 w-full">
       <div>
-        <p style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500, margin: 0 }}>
-          Pages /{" "}
-          <span style={{ color: "#475569" }}>{brandText}</span>
+        <p className="text-xs text-slate-400 font-medium m-0">
+          Pages / <span className="text-slate-600">{brandText}</span>
         </p>
-        <h1
-          style={{
-            fontSize: 42,
-            fontWeight: 800,
-            color: "#1b254b",
-            margin: 0,
-            marginTop: 4,
-            letterSpacing: "-1px",
-          }}
-        >
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#1b254b] m-0 mt-0.5 tracking-tight">
           {brandText}
         </h1>
       </div>
 
-      {/* Right: Search  */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          background: "#ffffff",
-          border: "1px solid #e2e8f0",
-          borderRadius: 999,
-          padding: "10px 14px",
-          boxShadow: "14px 17px 40px 4px rgba(112, 144, 176, 0.08)",
-          flexShrink: 0,
-        }}
-      >
+      {/* Right: Search & Controls */}
+      <div className="flex items-center gap-2.5 bg-white border border-slate-100 rounded-full px-3 py-2 shadow-sm w-full sm:w-auto justify-between sm:justify-end">
         {/* Search Input */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            background: "#f4f7fe",
-            borderRadius: 999,
-            padding: "8px 16px",
-            width: 220,
-          }}
-        >
-          <i
-            className="fa-solid fa-magnifying-glass"
-            style={{ color: "#94a3b8", fontSize: 13 }}
-          ></i>
+        <div className="flex items-center gap-2 bg-[#f4f7fe] rounded-full px-3.5 py-1.5 flex-1 sm:flex-none sm:w-48 md:w-56 lg:w-64 min-w-0">
+          <i className="fa-solid fa-magnifying-glass text-slate-400 text-xs shrink-0"></i>
           <input
             type="text"
             placeholder="Search..."
-            style={{
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              fontSize: 14,
-              color: "#1e293b",
-              width: "100%",
-            }}
+            className="bg-transparent border-none outline-none text-sm text-slate-700 w-full min-w-0"
           />
         </div>
 
-        {onMenuToggle && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onMenuToggle && (
+            <button
+              onClick={onMenuToggle}
+              className="flex items-center justify-center lg:hidden bg-transparent border-none cursor-pointer text-slate-600 text-base w-8 h-8 rounded-full hover:bg-slate-50 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <i className="fa-solid fa-bars"></i>
+            </button>
+          )}
+
+          {/* Moon Icon */}
           <button
-            onClick={onMenuToggle}
-            className="flex items-center justify-center lg:hidden"
-            aria-label="Toggle sidebar"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#475569",
-              fontSize: 16,
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              padding: 0,
-            }}
+            className="flex items-center justify-center bg-transparent border-none cursor-pointer text-slate-400 text-base w-8 h-8 rounded-full hover:bg-slate-50 transition-colors"
+            aria-label="Toggle dark mode"
           >
-            <i className="fa-solid fa-bars"></i>
+            <i className="fa-solid fa-moon"></i>
           </button>
-        )}
 
-        {/* Moon Icon */}
-        <button
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#94a3b8",
-            fontSize: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-          }}
-        >
-          <i className="fa-solid fa-moon"></i>
-        </button>
-
-        {/* Avatar */}
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "#4f46e5",
-            color: "#ffffff",
-            fontSize: 12,
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
-          }}
-        >
-          AP
+          {/* Avatar */}
+          <div className="w-8 h-8 rounded-full bg-[#4f46e5] text-white text-xs font-bold flex items-center justify-center cursor-pointer shadow-sm hover:opacity-90 transition-opacity">
+            AP
+          </div>
         </div>
       </div>
     </header>
