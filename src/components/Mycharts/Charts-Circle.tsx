@@ -1,56 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ComposedChart, Line, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
-// #region Sample data
 const data = [
-  {
-    name: 'Jun ',
-    uv: 590,
-    pv: 800,
-    amt: 1400,
-  },
-  {
-    name: 'Jun 6',
-    uv: 868,
-    pv: 967,
-    amt: 1506,
-  },
-  {
-    name: 'Jun 7',
-    uv: 1397,
-    pv: 1098,
-    amt: 989,
-  },
-  {
-    name: 'Jun 8',
-    uv: 1480,
-    pv: 1200,
-    amt: 1228,
-  },
-  {
-    name: 'Jun 9',
-    uv: 1520,
-    pv: 1108,
-    amt: 1100,
-  },
-  {
-    name: 'Jun 10',
-    uv: 1400,
-    pv: 680,
-    amt: 1700,
-  },
-  {
-    name: 'Jun 11',
-    uv: 1400,
-    pv: 680,
-    amt: 1700,
-  },
+  { name: 'High', value: 400 },
+  { name: 'Medium', value: 300 },
+  { name: 'Low', value: 200 },
 ];
-// #endregion
 
-export default function MyChart() {
+const COLORS = ["#4f46e5", "#818cf8", "#cbd5e1"];
+
+export default function ChartsCircle() {
   const [windowSize, setWindowSize] = useState({ width: 1024 });
 
   useEffect(() => {
@@ -132,7 +93,7 @@ export default function MyChart() {
           fontSize: responsive.h1FontSize,
         }}
       >
-   Tasks Created (Last 7 Days)
+        Distribution Analysis
       </h1>
       <h3
         style={{
@@ -142,28 +103,36 @@ export default function MyChart() {
           fontSize: responsive.h3FontSize,
         }}
       >
-        Daily count of newly created tasks
+        Straight Angle Pie Chart Breakdown
       </h3>
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, width: "100%" }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart
-            data={data}
+          <PieChart
             margin={{
-              top: 20,
-              right: 5,
-              bottom: 5,
-              left: 5,
+              top: 10,
+              right: 10,
+              bottom: 10,
+              left: 10,
             }}
           >
-            <CartesianGrid stroke="#f5f5f5" />
-            <XAxis dataKey="name" label={{ value: 'Pages', position: 'insideBottomRight', offset: -5 }} scale="band" />
-            <YAxis label={{ value: 'Index', angle: -90, position: 'insideLeft', offset: 10 }} width={60} />
+            <Pie
+              dataKey="value"
+              startAngle={180}
+              endAngle={0}
+              data={data}
+              cx="50%"
+              cy="90%"
+              outerRadius="85%"
+              fill="#8884d8"
+              label
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
             <Tooltip />
-            <Legend />
-            <Area type="monotone" dataKey="amt" fill="#8884d8" stroke="#8884d8" opacity={0.6} />
-            <Bar dataKey="pv" barSize={20} fill="#413ea0" />
-            <Line type="monotone" dataKey="uv" stroke="#ff7300" />
-          </ComposedChart>
+            <Legend verticalAlign="bottom" height={36} />
+          </PieChart>
         </ResponsiveContainer>
       </div>
     </div>
