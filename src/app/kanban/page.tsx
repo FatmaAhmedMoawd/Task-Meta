@@ -17,7 +17,7 @@ export default function KanbanPage() {
           minWidth: 0,
           overflowY: "auto",
           overflowX: "hidden",
-          padding: "16px",
+          padding: "24px",
         }}
       >
         <Navbar
