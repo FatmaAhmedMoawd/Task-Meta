@@ -13,7 +13,7 @@ export default function WeeklyLineChart() {
   ];
 
   // 2. الإعدادات بنفس الشكل الانسيابي اللي فات
-  const options = {
+  const options: any = {
     chart: {
       type: 'line', // رجعناه خط زي الأول
       toolbar: { show: false },
@@ -56,7 +56,7 @@ export default function WeeklyLineChart() {
     tooltip: {
       theme: 'light',
       y: {
-        formatter: function (val) {
+        formatter: function (val: any) {
           return "count : " + val; // نفس الكلمة اللي في الصورة
         }
       }

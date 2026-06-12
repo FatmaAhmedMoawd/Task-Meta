@@ -8,7 +8,7 @@ export default function PriorityDonut() {
   const series = [35, 45, 20];
 
   // 2. الإعدادات بنفس الألوان البنفسجية المتناسقة مع الصورة
-  const options = {
+  const options: any = {
     chart: { type: 'donut' },
     labels: ['High', 'Medium', 'Low'],
     
