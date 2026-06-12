@@ -4,15 +4,12 @@ import React from 'react';
 import Chart from 'react-apexcharts';
 
 export default function PriorityDonut() {
-  // 1. البيانات ثابتة (High, Medium, Low)
   const series = [35, 45, 20];
 
-  // 2. الإعدادات بنفس الألوان البنفسجية المتناسقة مع الصورة
   const options: any = {
     chart: { type: 'donut' },
     labels: ['High', 'Medium', 'Low'],
     
-    // الألوان: البنفسجي الأساسي للصورة، ثم درجة أفتح، ثم درجة هادئة جداً
     colors: ['#6366f1', '#a5b4fc', '#e0e7ff'], 
     
     legend: { position: 'bottom' },

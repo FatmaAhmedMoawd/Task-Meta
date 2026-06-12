@@ -47,7 +47,6 @@ export default function Page() {
             <p className="m-0 text-xl md:text-2xl font-bold text-slate-800">0</p>
           </div>
 
-          {/* Card 3: Overdue */}
           <div className="bg-[#f8fafc] border border-slate-200/60 rounded-2xl p-5 flex flex-col justify-between min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <i className="fa-solid fa-triangle-exclamation text-lg md:text-2xl text-rose-500 shrink-0"></i>
