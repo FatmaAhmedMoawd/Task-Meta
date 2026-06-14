@@ -28,7 +28,7 @@ export default function Page() {
         />
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-3 gap-4 md:gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
           {/* Card 1: Total Task */}
           <div className="bg-[#f8fafc] border border-slate-200/60 rounded-2xl p-5 flex flex-col justify-between min-w-0">
             <div className="flex items-center gap-2 mb-2">
