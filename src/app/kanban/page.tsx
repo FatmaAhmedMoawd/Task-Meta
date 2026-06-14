@@ -413,7 +413,7 @@ export default function KanbanPage() {
                                     boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
                                     ...provided.draggableProps.style,
                                   }}
-                                 Nub>
+                                >
                                   <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
                                     {task.title}
                                   </h3>
