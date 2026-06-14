@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import {
@@ -13,6 +13,8 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+// استيراد مكونات المكتبة الجديدة
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "";
@@ -72,6 +74,59 @@ export default function KanbanPage() {
     },
   ]);
 
+  // منع مشاكل الـ Hydration في Next.js
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    setEnabled(true);
+  }, []);
+
+  // دالة السحب والإفلات وتحديث الـ State
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+
+    // لو رُمي الكارت بره الصناديق
+    if (!destination) return;
+
+    // لو اترمي في نفس مكانه بالظبط
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // هنجيب الكروت الفلترد للعمود اللي سحبنا منه والعمود اللي رايحين له
+    const sourceStatus = source.droppableId as Task["status"];
+    const destStatus = destination.droppableId as Task["status"];
+
+    const currentTasks = [...tasks];
+    
+    // نحدد الكارت اللي بنحركه بناءً على ترتيبه في العمود الأصلي
+    const columnTasks = currentTasks.filter((t) => t.status === sourceStatus);
+    const movedTask = columnTasks[source.index];
+
+    // لو بننقل لعمود تاني، بنغير الـ status بتاع الكارت اللي اتحرك
+    if (sourceStatus !== destStatus) {
+      movedTask.status = destStatus;
+    }
+
+    // إعادة ترتيب كل الكروت بناءً على الاندكس الجديد
+    // هنشيل الكارت من القائمة كاملة مؤقتاً
+    const tasksWithoutMoved = currentTasks.filter((t) => t.id !== movedTask.id);
+    
+    // هنجمع الكروت المتبقية في العمود المستهدف عشان نحشره في الاندكس الصح
+    const destColumnTasks = tasksWithoutMoved.filter((t) => t.status === destStatus);
+    destColumnTasks.splice(destination.index, 0, movedTask);
+
+    // ندمج كل الكروت التانية اللي ملمسناهاش ونحدث الـ State
+    const finalTasks = [
+      ...tasksWithoutMoved.filter((t) => t.status !== destStatus),
+      ...destColumnTasks
+    ];
+
+    setTasks(finalTasks);
+  };
+
   const handleSubmitTask = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -93,6 +148,8 @@ export default function KanbanPage() {
     setTasks((prev) => [...prev, newTask]);
     setIsDialogOpen(false);
   };
+
+  if (!enabled) return null;
 
   return (
     <main style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -158,7 +215,7 @@ export default function KanbanPage() {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <button 
+              <button
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -186,7 +243,7 @@ export default function KanbanPage() {
                 + Add Task
               </button>
             </DialogTrigger>
-            
+
             <DialogContent className="sm:max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl p-6">
               <DialogHeader className="mb-4">
                 <DialogTitle className="text-xl font-bold text-slate-800">Add New Task</DialogTitle>
@@ -194,7 +251,7 @@ export default function KanbanPage() {
                   Create a new task for your Kanban board. Fill in the details below.
                 </DialogDescription>
               </DialogHeader>
-              
+
               <form onSubmit={handleSubmitTask} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="task-title" className="text-xs font-semibold text-slate-600">
@@ -249,7 +306,7 @@ export default function KanbanPage() {
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-800"
                   />
                 </div>
-                
+
                 <DialogFooter className="mt-4 flex gap-2 justify-end">
                   <DialogClose asChild>
                     <button
@@ -271,91 +328,142 @@ export default function KanbanPage() {
           </Dialog>
         </div>
 
-        <div
-          className="flex flex-col md:flex-row"
-          style={{
-            gap: 12,
-          }}
-        >
-          {[
-            { title: "To Do", description: "Tasks to start." },
-            { title: "In Progress", description: "To In Progress" },
-            { title: "Done", description: "Completed tasks Done." },
-          ].map((column) => (
-            <div
-              key={column.title}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: 16,
-                borderRadius: 12,
-                border: "1px solid #e2e8f0",
-                background: "#ffffff",
-                boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-              }}
-            >
-              <h2 style={{ margin: 0, marginBottom: 8, fontSize: 16, fontWeight: 700 }}>
-                {column.title}
-              </h2>
-              <p style={{ margin: 0, color: "#4b5563", fontSize: 14 }}>{column.description}</p>
+        {/* تغليف الأعمدة بالـ DragDropContext */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div
+            className="flex flex-col md:flex-row"
+            style={{
+              gap: 12,
+            }}
+          >
+            {[
+              { title: "To Do", description: "Tasks to start." },
+              { title: "In Progress", description: "To In Progress" },
+              { title: "Done", description: "Completed tasks Done." },
+            ].map((column) => {
+              // 1. حساب عدد الكروت الخاصة بالعمود الحالي بشكل ديناميكي
+              const columnTasksCount = tasks.filter((task) => task.status === column.title).length;
 
-              {/* Tasks List */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
-                {tasks
-                  .filter((task) => task.status === column.title)
-                  .map((task) => (
+              return (
+                <Droppable key={column.title} droppableId={column.title}>
+                  {(provided) => (
                     <div
-                      key={task.id}
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
                       style={{
-                        padding: 14,
-                        borderRadius: 10,
-                        border: "1px solid #f1f5f9",
-                        background: "#f8fafc",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                        flex: 1,
+                        minWidth: 0,
+                        padding: 16,
+                        borderRadius: 12,
+                        border: "1px solid #e2e8f0",
+                        background: "#ffffff",
+                        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
                       }}
                     >
-                      <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
-                        {task.title}
-                      </h3>
-                      {task.description && (
-                        <p style={{ margin: 0, marginTop: 4, fontSize: 12, color: "#64748b" }}>
-                          {task.description}
-                        </p>
-                      )}
-                      {task.dueDate && (
-                        <div
-                          className={`mt-3 flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md w-fit border ${
-                            isOverdue(task.dueDate) && task.status !== "Done"
-                              ? "bg-rose-50 text-rose-600 border-rose-100"
-                              : task.status === "Done"
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : "bg-slate-50 text-slate-600 border-slate-100"
-                          }`}
+                      {/* 2. تعديل الـ Header الخاص بالعمود ليحتوي على العنوان والمربع الرقمي معاً */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                          {column.title}
+                        </h2>
+                        {/* 3. المربع الرقمي بتصميم متناسق ونظيف جداً */}
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "#f1f5f9",
+                            color: "#64748b",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            padding: "2px 8px",
+                            borderRadius: "6px",
+                            border: "1px solid #e2e8f0",
+                            minWidth: "24px",
+                          }}
                         >
-                          <i className="fa-regular fa-calendar text-[12px]"></i>
-                          <span>{formatDate(task.dueDate)}</span>
-                        </div>
-                      )}
+                          {columnTasksCount}
+                        </span>
+                      </div>
+
+                      <p style={{ margin: 0, color: "#4b5563", fontSize: 14 }}>{column.description}</p>
+
+                      {/* القائمة المستضيفة للكروت */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+                        {tasks
+                          .filter((task) => task.status === column.title)
+                          .map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  style={{
+                                    padding: 14,
+                                    borderRadius: 10,
+                                    border: "1px solid #f1f5f9",
+                                    background: "#f8fafc",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                                    ...provided.draggableProps.style,
+                                  }}
+                                 Nub>
+                                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
+                                    {task.title}
+                                  </h3>
+                                  {task.description && (
+                                    <p style={{ margin: 0, marginTop: 4, fontSize: 12, color: "#64748b" }}>
+                                      {task.description}
+                                    </p>
+                                  )}
+                                  {task.dueDate && (
+                                    <div
+                                      className={`mt-3 flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md w-fit border ${
+                                        isOverdue(task.dueDate) && task.status !== "Done"
+                                          ? "bg-rose-50 text-rose-600 border-rose-100"
+                                          : task.status === "Done"
+                                          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                          : "bg-slate-50 text-slate-600 border-slate-100"
+                                      }`}
+                                    >
+                                      <i className="fa-regular fa-calendar text-[12px]"></i>
+                                      <span>{formatDate(task.dueDate)}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                        
+                        {columnTasksCount === 0 && (
+                          <div
+                            style={{
+                              padding: "24px 16px",
+                              borderRadius: 10,
+                              border: "1px dashed #cbd5e1",
+                              color: "#94a3b8",
+                              fontSize: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            No tasks yet
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                {tasks.filter((task) => task.status === column.title).length === 0 && (
-                  <div
-                    style={{
-                      padding: "24px 16px",
-                      borderRadius: 10,
-                      border: "1px dashed #cbd5e1",
-                      color: "#94a3b8",
-                      fontSize: 12,
-                      textAlign: "center",
-                    }}
-                  >
-                    No tasks yet
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                  )}
+                </Droppable>
+              );
+            })}
+          </div>
+        </DragDropContext>
       </section>
     </main>
   );
