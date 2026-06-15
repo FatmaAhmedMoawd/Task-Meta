@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import {
@@ -13,8 +16,27 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-// استيراد مكونات المكتبة الجديدة
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { useTaskStore, Task } from "@/store/useTaskStore";
+
+
+const taskSchema = z.object({
+  title: z
+    .string()
+    .min(1, "العنوان مطلوب")
+    .min(3, "العنوان يجب أن يكون 3 أحرف على الأقل")
+    .max(50, "العنوان طويل جداً (الحد الأقصى 50 حرف)"),
+  description: z
+    .string()
+    .min(1, "الوصف مطلوب")
+    .max(200, "الوصف طويل جداً (الحد الأقصى 200 حرف)"),
+  status: z.enum(["To Do", "In Progress", "Done"]),
+  dueDate: z
+    .string()
+    .min(1, "تاريخ الاستحقاق مطلوب"),
+});
+
+type TaskFormData = z.infer<typeof taskSchema>;
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return "";
@@ -39,55 +61,47 @@ const isOverdue = (dateString?: string) => {
   return dueDate < today;
 };
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: "To Do" | "In Progress" | "Done";
-  dueDate?: string;
-}
-
 export default function KanbanPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Design Landing Page",
-      description: "Create high-fidelity mockups for the new homepage design.",
-      status: "To Do",
-      dueDate: "2026-06-15",
-    },
-    {
-      id: "2",
-      title: "Implement Auth Flow",
-      description: "Set up login and signup pages using NextAuth.",
-      status: "In Progress",
-      dueDate: "2026-06-20",
-    },
-    {
-      id: "3",
-      title: "Fix Navigation Bar",
-      description: "Correct spacing issues in the navigation links on mobile devices.",
-      status: "Done",
-      dueDate: "2026-06-10",
-    },
-  ]);
 
-  // منع مشاكل الـ Hydration في Next.js
+  const tasks = useTaskStore((state) => state.tasks);
+  const setTasks = useTaskStore((state) => state.setTasks);
+  const addTask = useTaskStore((state) => state.addTask);
+
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
+    useTaskStore.persist.rehydrate();
     setEnabled(true);
   }, []);
 
-  // دالة السحب والإفلات وتحديث الـ State
+  useEffect(() => {
+    if (enabled) {
+      console.log("📋 Current Tasks from Zustand Store:", tasks);
+    }
+  }, [tasks, enabled]);
+
+  // React Hook Form + Zod
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<TaskFormData>({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      status: "To Do",
+      dueDate: "",
+    },
+  });
+
   const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
 
-    // لو رُمي الكارت بره الصناديق
     if (!destination) return;
 
-    // لو اترمي في نفس مكانه بالظبط
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
@@ -95,58 +109,41 @@ export default function KanbanPage() {
       return;
     }
 
-    // هنجيب الكروت الفلترد للعمود اللي سحبنا منه والعمود اللي رايحين له
     const sourceStatus = source.droppableId as Task["status"];
     const destStatus = destination.droppableId as Task["status"];
-
     const currentTasks = [...tasks];
-    
-    // نحدد الكارت اللي بنحركه بناءً على ترتيبه في العمود الأصلي
     const columnTasks = currentTasks.filter((t) => t.status === sourceStatus);
     const movedTask = columnTasks[source.index];
 
-    // لو بننقل لعمود تاني، بنغير الـ status بتاع الكارت اللي اتحرك
     if (sourceStatus !== destStatus) {
       movedTask.status = destStatus;
     }
 
-    // إعادة ترتيب كل الكروت بناءً على الاندكس الجديد
-    // هنشيل الكارت من القائمة كاملة مؤقتاً
     const tasksWithoutMoved = currentTasks.filter((t) => t.id !== movedTask.id);
-    
-    // هنجمع الكروت المتبقية في العمود المستهدف عشان نحشره في الاندكس الصح
-    const destColumnTasks = tasksWithoutMoved.filter((t) => t.status === destStatus);
-    destColumnTasks.splice(destination.index, 0, movedTask);
+    const currentDestTasks = tasksWithoutMoved.filter((t) => t.status === destStatus);
 
-    // ندمج كل الكروت التانية اللي ملمسناهاش ونحدث الـ State
+    currentDestTasks.splice(destination.index, 0, movedTask);
+
     const finalTasks = [
       ...tasksWithoutMoved.filter((t) => t.status !== destStatus),
-      ...destColumnTasks
+      ...currentDestTasks,
     ];
 
     setTasks(finalTasks);
   };
 
-  const handleSubmitTask = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string;
-    const status = formData.get("status") as Task["status"];
-    const dueDate = formData.get("dueDate") as string;
-
-    if (!title.trim()) return;
-
+  // دالة الإرسال مع Zod Validation
+  const onSubmit = (data: TaskFormData) => {
     const newTask: Task = {
       id: Date.now().toString(),
-      title,
-      description,
-      status,
-      dueDate: dueDate || undefined,
+      title: data.title,
+      description: data.description || "",
+      status: data.status,
+      dueDate: data.dueDate || undefined,
     };
-
-    setTasks((prev) => [...prev, newTask]);
+    addTask(newTask);
     setIsDialogOpen(false);
+    reset();
   };
 
   if (!enabled) return null;
@@ -213,7 +210,10 @@ export default function KanbanPage() {
             />
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) reset();
+          }}>
             <DialogTrigger asChild>
               <button
                 style={{
@@ -252,41 +252,61 @@ export default function KanbanPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleSubmitTask} className="flex flex-col gap-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+                {/* حقل العنوان */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="task-title" className="text-xs font-semibold text-slate-600">
-                    Task Title
+                    Task Title *
                   </label>
                   <input
                     id="task-title"
-                    name="title"
                     type="text"
-                    required
                     placeholder="Enter task title..."
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-800"
+                    {...register("title")}
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-hidden transition-colors bg-white text-slate-800 ${
+                      errors.title
+                        ? "border-rose-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-400"
+                        : "border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    }`}
                   />
+                  {errors.title && (
+                    <span className="text-xs font-medium text-rose-500">
+                      ⚠ {errors.title.message}
+                    </span>
+                  )}
                 </div>
 
+                {/* حقل الوصف */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="task-desc" className="text-xs font-semibold text-slate-600">
-                    Description
+                    Description *
                   </label>
                   <textarea
                     id="task-desc"
-                    name="description"
                     placeholder="Enter task description..."
                     rows={3}
-                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none bg-white text-slate-800"
+                    {...register("description")}
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-hidden resize-none transition-colors bg-white text-slate-800 ${
+                      errors.description
+                        ? "border-rose-400 focus:border-rose-500"
+                        : "border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    }`}
                   />
+                  {errors.description && (
+                    <span className="text-xs font-medium text-rose-500">
+                      ⚠ {errors.description.message}
+                    </span>
+                  )}
                 </div>
 
+                {/* حقل الحالة */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="task-status" className="text-xs font-semibold text-slate-600">
                     Status
                   </label>
                   <select
                     id="task-status"
-                    name="status"
+                    {...register("status")}
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-800"
                   >
                     <option value="To Do">To Do</option>
@@ -295,14 +315,15 @@ export default function KanbanPage() {
                   </select>
                 </div>
 
+                {/* حقل التاريخ */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="task-due-date" className="text-xs font-semibold text-slate-600">
-                    Due Date
+                    Due Date *
                   </label>
                   <input
                     id="task-due-date"
-                    name="dueDate"
                     type="date"
+                    {...register("dueDate")}
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-hidden focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white text-slate-800"
                   />
                 </div>
@@ -328,7 +349,6 @@ export default function KanbanPage() {
           </Dialog>
         </div>
 
-        {/* تغليف الأعمدة بالـ DragDropContext */}
         <DragDropContext onDragEnd={onDragEnd}>
           <div
             className="flex flex-col md:flex-row"
@@ -341,7 +361,6 @@ export default function KanbanPage() {
               { title: "In Progress", description: "To In Progress" },
               { title: "Done", description: "Completed tasks Done." },
             ].map((column) => {
-              // 1. حساب عدد الكروت الخاصة بالعمود الحالي بشكل ديناميكي
               const columnTasksCount = tasks.filter((task) => task.status === column.title).length;
 
               return (
@@ -360,7 +379,6 @@ export default function KanbanPage() {
                         boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
                       }}
                     >
-                      {/* 2. تعديل الـ Header الخاص بالعمود ليحتوي على العنوان والمربع الرقمي معاً */}
                       <div
                         style={{
                           display: "flex",
@@ -372,7 +390,6 @@ export default function KanbanPage() {
                         <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
                           {column.title}
                         </h2>
-                        {/* 3. المربع الرقمي بتصميم متناسق ونظيف جداً */}
                         <span
                           style={{
                             display: "flex",
@@ -394,7 +411,6 @@ export default function KanbanPage() {
 
                       <p style={{ margin: 0, color: "#4b5563", fontSize: 14 }}>{column.description}</p>
 
-                      {/* القائمة المستضيفة للكروت */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
                         {tasks
                           .filter((task) => task.status === column.title)
